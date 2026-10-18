@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07111f">
+<title>JARVIS — Personal Assistant</title>
+<style>
+:root{color-scheme:dark;--bg:#07111f;--panel:#0d1b2c;--line:#1e4260;--cyan:#67e8f9;--text:#e8f4ff;--muted:#9bb4ca}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at top,#12304a 0,#07111f 58%);color:var(--text);font:16px -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+main{max-width:760px;margin:auto;padding:20px 16px calc(30px + env(safe-area-inset-bottom))}
+header{text-align:center;padding:18px 0 22px}.orb{width:86px;height:86px;border-radius:50%;margin:0 auto 14px;border:2px solid var(--cyan);box-shadow:0 0 22px #22d3ee55,inset 0 0 18px #22d3ee44;display:grid;place-items:center;color:var(--cyan);font-size:28px}
+h1{letter-spacing:.22em;font-size:24px;margin:8px 0}header p{color:var(--muted);margin:8px 0}
+.status{font-size:12px;letter-spacing:.12em;color:var(--cyan);text-transform:uppercase}
+.panel{background:#0b1928eF;border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 8px 30px #0002}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.1em;color:var(--cyan);margin:0 0 12px}
+#log{display:flex;flex-direction:column;gap:10px;min-height:95px;max-height:38vh;overflow:auto}
+.msg{padding:11px 13px;border-radius:13px;line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+.msg.jarvis{background:#102a3b;border:1px solid #1c5266}.msg.you{background:#172237;border:1px solid #30445e}
+small{color:var(--muted);display:block;margin-bottom:4px;font-size:11px;text-transform:uppercase;letter-spacing:.1em}
+.controls{display:flex;gap:8px;margin-top:12px}.controls input,textarea{min-width:0;flex:1;background:#07111f;border:1px solid #34516a;color:var(--text);border-radius:12px;padding:13px;font:inherit}
+button,.linkbtn{border:1px solid #3c8299;background:#103448;color:var(--text);padding:12px 14px;border-radius:12px;font:inherit;font-weight:600;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+button.primary{background:#0b6176;border-color:var(--cyan)}button:active{transform:scale(.98)}
+.buttons{display:flex;flex-wrap:wrap;gap:8px}.buttons button{flex:1;min-width:120px}
+textarea{width:100%;resize:vertical;min-height:70px}.note{font-size:13px;color:var(--muted);line-height:1.5}
+#memoryList{padding-left:20px;color:var(--text)}#memoryList li{margin:8px 0;overflow-wrap:anywhere}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:16px}
+</style>
+</head>
+<body><main>
+<header><div class="orb">J</div><div class="status" id="status">Systems online · Local prototype</div><h1>J.A.R.V.I.S.</h1><p>Your personal assistant prototype</p></header>
+<section class="panel"><h2>Conversation</h2><div id="log" aria-live="polite"></div>
+<div class="controls"><input id="entry" placeholder="Type a message…" autocomplete="off"><button class="primary" id="send">Send</button></div>
+<div class="buttons" style="margin-top:10px"><button id="mic">🎙 Talk</button><button id="stopVoice">🔇 Stop voice</button></div>
+<p class="note">This first version uses your browser's speech features and simple built-in commands. It is not connected to an AI model yet, so it won't pretend to answer questions it can't handle.</p></section>
+<section class="panel"><h2>Quick actions</h2><div class="buttons">
+<button id="search">🌐 Search web</button><button id="shortcuts">⚡ Open Shortcuts</button><button id="time">🕒 Current time</button>
+</div></section>
+<section class="panel"><h2>Memory notebook</h2><p class="note">Save notes you want this prototype to keep on this device/browser. Don't save passwords, private account details, or sensitive information.</p>
+<textarea id="noteInput" placeholder="Example: My current project is building JARVIS…"></textarea>
+<div class="buttons" style="margin-top:8px"><button class="primary" id="saveNote">Save memory</button><button id="clearNotes">Clear memories</button></div>
+<ul id="memoryList"></ul></section>
+<footer>JARVIS starter · Your saved notes stay in this browser unless you clear them. Voice recognition availability depends on iOS and browser support.</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const log=$('log'), entry=$('entry'), status=$('status');
+function say(text, speak=true){addMessage('JARVIS',text,'jarvis');if(speak&&'speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.rate=0.96;u.pitch=0.92;speechSynthesis.speak(u)}}
+function addMessage(who,text,cls){const d=document.createElement('div');d.className='msg '+cls;const s=document.createElement('small');s.textContent=who;const b=document.createElement('div');b.textContent=text;d.append(s,b);log.append(d);log.scrollTop=log.scrollHeight}
+function respond(raw){const q=raw.trim();if(!q)return;addMessage('You',q,'you');entry.value='';const t=q.toLowerCase();
+if(/^(hi|hello|hey)\b/.test(t)){say('Hello. JARVIS starter systems are online. What would you like to work on?')}
+else if(t.includes('time')||t.includes('date')){say('It is '+new Date().toLocaleString([], {dateStyle:'full',timeStyle:'short'})+'.')}
+else if(t.includes('remember')||t.includes('memory')){say('Use the Memory Notebook below to save a note on this device. This prototype does not yet have conversational AI memory.')}
+else if(t.includes('search')){const term=q.replace(/search( the web)?( for)?/i,'').trim();if(term)window.open('https://www.google.com/search?q='+encodeURIComponent(term),'_blank','noopener');else say('Tap Search web, or tell me what you want to search for.')}
+else if(t.includes('shortcut')){openShortcuts();say('I opened the Shortcuts app link. If iOS does not open it, launch Shortcuts manually.')}
+else if(t.includes('help')){say('I can tell the time, open a web search, open Shortcuts, speak replies, and save notes in the Memory Notebook. A real AI brain and automated actions are the next build stages.')}
+else{say('I heard you, but this starter is not connected to an AI model yet. For now, try “help”, “time”, “search for …”, or save a note in Memory Notebook.')}
+}
+function openShortcuts(){window.location.href='shortcuts://'}
+$('send').onclick=()=>respond(entry.value);entry.addEventListener('keydown',e=>{if(e.key==='Enter')respond(entry.value)});
+$('stopVoice').onclick=()=>{if('speechSynthesis'in window)speechSynthesis.cancel();status.textContent='Voice stopped · Ready'};
+$('time').onclick=()=>say('It is '+new Date().toLocaleString([], {dateStyle:'full',timeStyle:'short'})+'.');
+$('search').onclick=()=>{const q=prompt('What should JARVIS search for?');if(q&&q.trim())window.open('https://www.google.com/search?q='+encodeURIComponent(q.trim()),'_blank','noopener')};
+$('shortcuts').onclick=openShortcuts;
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+$('mic').onclick=()=>{if(!SR){status.textContent='Speech recognition unavailable in this browser';say('Voice input is not supported here. You can type your message instead.',false);return}
+try{const r=new SR();r.lang='en-US';r.interimResults=false;r.maxAlternatives=1;status.textContent='Listening…';r.onresult=e=>{status.textContent='Voice input received';respond(e.results[0][0].transcript)};r.onerror=()=>{status.textContent='Mic unavailable · Try typing';};r.onend=()=>{if(status.textContent==='Listening…')status.textContent='Ready';};r.start()}catch(e){status.textContent='Could not start microphone · Try typing'}}
+const KEY='jarvisStarterNotesV1';
+function getNotes(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return []}}
+function drawNotes(){const ul=$('memoryList');ul.replaceChildren();getNotes().forEach((n,i)=>{const li=document.createElement('li');li.textContent=n;ul.append(li)})}
+$('saveNote').onclick=()=>{const n=$('noteInput').value.trim();if(!n)return;const arr=getNotes();arr.unshift(n);localStorage.setItem(KEY,JSON.stringify(arr.slice(0,50)));$('noteInput').value='';drawNotes();say('Memory saved on this device.',false)};
+$('clearNotes').onclick=()=>{if(confirm('Clear all saved notes in this browser?')){localStorage.removeItem(KEY);drawNotes();say('Saved notes cleared.',false)}};
+drawNotes();say('Hello. I am your JARVIS starter. Try saying “help” or typing a message.',false);
+</script></body></html>
